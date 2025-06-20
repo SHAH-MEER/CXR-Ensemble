@@ -1,8 +1,9 @@
 torch
 torchvision
-transformers
-matplotlib
-numpy
-pandas
 gradio
+transformers
+pandas
+scikit-learn
+matplotlib
 Pillow
+tqdm
