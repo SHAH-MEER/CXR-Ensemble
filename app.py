@@ -5,7 +5,6 @@ from torchvision import models, transforms
 from PIL import Image
 import gradio as gr
 import pandas as pd
-from transformer import MedicalReportGenerator
 
 # Device
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -123,30 +122,18 @@ def ensemble_predict(img, preprocess, device=DEVICE):
     result = {class_names[i]: float(avg_probs[0, i]) for i in range(len(class_names))}
     return result
 
-# Initialize BioGPT report generator once
-report_generator = MedicalReportGenerator()
-
-def predict_and_report(img, show_report):
-    result = ensemble_predict(img, get_preprocess(), device=DEVICE)
-    pred_class = max(result, key=result.get)
-    if show_report:
-        report_text = report_generator.generate_report(pred_class)
-    else:
-        report_text = ""
-    return result, report_text
-
 examples = [
-    ["examples/normal.jpeg", True],
-    ["examples/pneumonia.jpeg", True],
-    ["examples/TB.jpeg", True]
+    ["examples/normal.jpeg"],
+    ["examples/pneumonia.jpeg"],
+    ["examples/TB.jpeg"]
 ]
 
 iface = gr.Interface(
-    fn=predict_and_report,
-    inputs=[gr.Image(type='pil'), gr.Checkbox(label="Show Clinical Explanation", value=True)],
-    outputs=[gr.Label(num_top_classes=3, label="Class Probabilities"), gr.Textbox(label="Clinical Explanation")],
-    title="Chest X-Ray Classification (CNN Ensemble + BioGPT Report)",
-    description="Upload a chest X-ray image. The CNN ensemble predicts Normal, Pneumonia, or TB. Optionally, a real clinical report is generated for the predicted class using BioGPT.",
+    fn=ensemble_predict,
+    inputs=[gr.Image(type='pil')],
+    outputs=[gr.Label(num_top_classes=3, label="Class Probabilities")],
+    title="Chest X-Ray Classification (CNN Ensemble)",
+    description="Upload a chest X-ray image. The CNN ensemble predicts Normal, Pneumonia, or TB.",
     theme=gr.themes.Soft(),
     examples=examples
 )
