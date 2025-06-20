@@ -84,6 +84,8 @@ def load_ensemble_models(device=DEVICE):
         # Get class names from CSV
         if class_names is None:
             class_names = get_class_names(info['csv_path'])
+            if not class_names or not isinstance(class_names, list):
+                raise RuntimeError("Could not load class names from CSV. Please check the CSV files.")
         num_classes = len(class_names)
         setattr(model, info['classifier_attr'], get_custom_classifier(in_feats, num_classes))
         model.load_state_dict(torch.load(info['weight_path'], map_location=device))
@@ -109,8 +111,12 @@ def get_preprocess():
         transforms.Normalize(mean=imagenet_mean, std=imagenet_std)
     ])
 
-def ensemble_predict(img, preprocess, device=DEVICE):
+def ensemble_predict(img):
+    preprocess = get_preprocess()
+    device = DEVICE
     models_list, class_names = load_ensemble_models(device)
+    if not class_names or not isinstance(class_names, list):
+        raise RuntimeError("Class names could not be loaded. Please check the CSV files.")
     input_tensor = preprocess(img).unsqueeze(0).to(device)
     probs_list = []
     with torch.no_grad():
@@ -134,7 +140,7 @@ iface = gr.Interface(
     outputs=[gr.Label(num_top_classes=3, label="Class Probabilities")],
     title="Chest X-Ray Classification (CNN Ensemble)",
     description="Upload a chest X-ray image. The CNN ensemble predicts Normal, Pneumonia, or TB.",
-    theme=gr.themes.Soft(),
+    theme="soft",
     examples=examples
 )
 
